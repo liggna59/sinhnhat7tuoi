@@ -337,7 +337,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
     <script>
-        // --- 1. CẤU HÌNH FIREBASE DATABASE ĐẦY ĐỦ CHÍNH CHỦ ---
+        // --- CẤU HÌNH FIREBASE DATABASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDaElInBGRcqhQnlSuKD0o5J0xIG37vCzs",
             authDomain: "aurora-d3f41.firebaseapp.com",
@@ -349,14 +349,13 @@
             measurementId: "G-JEVSBQCLG9"
         };
 
-        // Khởi tạo Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const memoriesRef = database.ref('aurora_stories'); 
 
-        // --- 2. LOGIC ĐỒNG BỘ REALTIME VÀ LẬT SÁCH ---
         let memories = [];
         let currentPage = 0;
+        let isFirstLoad = true; // Biến đánh dấu lần đầu tiên tải trang
 
         const bookPage = document.getElementById('bookPage');
         const displayImg = document.getElementById('displayImg');
@@ -372,7 +371,17 @@
                 Object.keys(data).forEach(key => {
                     memories.push(data[key]);
                 });
-                currentPage = memories.length - 1; // Nhảy ngay tới trang mới gửi
+                
+                // --- PHẦN TỐI ƯU CHUYỂN TRANG TỰ ĐỘNG ---
+                if (isFirstLoad) {
+                    // Lần đầu mở web: Nhảy tới trang mới nhất (cuối cùng)
+                    currentPage = memories.length - 1;
+                    isFirstLoad = false;
+                } else {
+                    // Khi có bài viết mới đẩy lên: Bất kể b đang ở trang nào, 
+                    // hệ thống tự động tính toán lại và đưa thẳng b tới trang cuối cùng vừa tạo
+                    currentPage = memories.length - 1;
+                }
             }
             updateBook();
         });
@@ -451,7 +460,7 @@
             });
         }
 
-        // --- LOGIC GỬI HỒI ỨC AN TOÀN & TỐC ĐỘ CAO ---
+        // --- LOGIC GỬI HỒI ỨC ---
         document.getElementById('storyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const author = document.getElementById('author').value;
@@ -465,11 +474,8 @@
             try {
                 let downloadUrl = null;
                 
-                // Gửi ảnh qua ImgBB sau khi đã co nén siêu nhẹ
                 if (imageFile) {
-                    // Tự động nén ảnh về kích thước tối đa 1000px, chất lượng 75% ngay tại máy user
                     const compressedBlob = await compressImage(imageFile, 1000, 1000, 0.75);
-                    
                     const imgbbApiKey = '67089e16b65e21576b2419c114d01778'; 
                     const formData = new FormData();
                     formData.append('image', compressedBlob, 'compressed.jpg'); 
@@ -488,7 +494,6 @@
                     }
                 }
 
-                // Lưu text và link ảnh đồng bộ trực tiếp lên Firebase Realtime Database
                 await memoriesRef.push({
                     author: author,
                     text: text,
@@ -501,9 +506,8 @@
 
             } catch (error) {
                 console.error(error);
-                alert("Có lỗi xảy ra: " + error.message + "\nB nhớ chắc chắn đã lưu Rules Database thành true trên console nha!");
+                alert("Có lỗi xảy ra: " + error.message);
             } finally {
-                // Khối bảo hiểm luôn nhả nút về trạng thái cũ nếu có lỗi hệ thống xảy ra
                 submitBtn.textContent = "Lưu vào sách";
                 submitBtn.disabled = false;
             }
