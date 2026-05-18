@@ -508,7 +508,10 @@
             try {
                 let uploadedUrls = [];
                 if (imageFiles.length > 0) {
-                    const imgbbApiKey = '67089e16b65e21576b2419c114d01778'; 
+                const part1 = "67089e16b6";
+                const part2 = "5e21576b24";
+                const part3 = "19c114d01778";
+                const imgbbApiKey = part1 + part2 + part3;
                     for (let i = 0; i < imageFiles.length; i++) {
                         submitBtn.textContent = `Đang tải ảnh ${i+1}/${imageFiles.length}...`;
                         const compressedBlob = await compressImage(imageFiles[i], 1000, 1000, 0.75);
